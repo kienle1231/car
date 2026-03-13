@@ -1,0 +1,42 @@
+const Car = require('../models/Car');
+
+exports.getCars = async (req, res) => {
+  try {
+    const { brand, type, minPrice, maxPrice, search } = req.query;
+    let query = {};
+    if (brand) query.brand = brand;
+    if (type) query.type = type;
+    if (minPrice || maxPrice) {
+      query.pricePerDay = {};
+      if (minPrice) query.pricePerDay.$gte = Number(minPrice);
+      if (maxPrice) query.pricePerDay.$lte = Number(maxPrice);
+    }
+    if (search) query.name = { $regex: search, $options: 'i' };
+
+    const cars = await Car.find(query);
+    res.json(cars);
+  } catch (error) { res.status(500).json({ error: error.message }); }
+};
+
+exports.getCarById = async (req, res) => {
+  try { const car = await Car.findById(req.params.id); res.json(car); }
+  catch (error) { res.status(404).json({ message: 'Car not found' }); }
+};
+
+// Admin handlers
+exports.createCar = async (req, res) => {
+  try { const car = await Car.create(req.body); res.status(201).json(car); }
+  catch (error) { res.status(400).json({ error: error.message }); }
+};
+
+exports.updateCar = async (req, res) => {
+  try {
+    const car = await Car.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.json(car);
+  } catch (error) { res.status(400).json({ error: error.message }); }
+};
+
+exports.deleteCar = async (req, res) => {
+  try { await Car.findByIdAndDelete(req.params.id); res.json({ message: 'Car removed' }); }
+  catch (error) { res.status(500).json({ error: error.message }); }
+};
